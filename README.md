@@ -251,6 +251,56 @@ fastbootd.
 
 ## 9. Step 6 — Post-install
 
+### Register the device with Google (required)
+
+Without this, the Play Store eventually replaces every app page with *"This device isn't Play
+Protect certified — your device isn't certified to run Google apps or use Google services"* and
+a single **Close** button: nothing can be installed. On the test unit the Play Store worked for
+about a week after installation and then started blocking; the notification alone had been
+there from day one. Registering with Google's own page for custom ROMs lifts the block.
+
+Read the Google Services Framework Android ID (needs `adb root`, available on this userdebug
+build):
+
+```bash
+adb root
+```
+```bash
+adb shell sqlite3 /data/data/com.google.android.gsf/databases/gservices.db "select value from main where name='android_id';"
+```
+
+Open **https://www.google.com/android/uncertified/** in any browser, sign in with **the same
+Google account used on the phone**, paste the number, solve the captcha, press **Register**.
+
+Registering alone did not lift the block on the test unit: Play Store and Play Services cache
+the failed check. Clear the data of both, then reboot:
+
+```bash
+adb shell am force-stop com.android.vending
+```
+```bash
+adb shell am force-stop com.google.android.gms
+```
+```bash
+adb shell pm clear com.android.vending
+```
+```bash
+adb shell pm clear com.google.android.gms
+```
+```bash
+adb reboot
+```
+
+Clearing only the caches, or only the Play Store data, was **not** enough — both data sets had
+to go. Your Google account stays signed in; Play Services forgets some local preferences (you
+may be asked again about location accuracy).
+
+> **Do not clear the data of Google Services Framework (`com.google.android.gsf`).** That is
+> where the Android ID lives: clearing it generates a new ID and silently voids the
+> registration you just made.
+
+### Optional tuning
+
 ```bash
 scripts/07-post-install-tweaks.sh        # all optional, see the script for what each line does
 ```
@@ -269,10 +319,13 @@ None of these were needed on the test unit, so none are applied by default.
 
 ## 10. Known issues (cosmetic or unavoidable)
 
-**"This device isn't Play Protect certified" notification, repeatedly.** Unavoidable with an
-unlocked bootloader. Turn off just that channel: Settings → Apps → Google Play Services →
-Notifications → **Play Protect** (internal id `uncertified_device`). Other Play Protect warnings
-keep working.
+**"This device isn't Play Protect certified" notification, repeatedly.** A consequence of the
+unlocked bootloader. If the Play Store *also* refuses to install apps, that is not cosmetic —
+see [Register the device with Google](#register-the-device-with-google-required). The
+notification alone can be silenced by turning off just that channel: Settings → Apps → Google
+Play Services → Notifications → **Play Protect** (internal id `uncertified_device`). Other Play
+Protect warnings keep working. Note that registration fixes the Play Store, not Play Integrity:
+banking apps and Google Wallet still refuse to run.
 
 **Play Services throws `SecurityException: Permission denial to mutate flag` in bursts.** Its
 `PlatformConfigurator` lacks `WRITE_DEVICE_CONFIG` because GMS runs from `/data/app` rather than as

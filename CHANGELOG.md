@@ -27,3 +27,12 @@
 - Documented how to silence the "device isn't Play Protect certified" notification
   (channel `uncertified_device`) instead of the dangerous "just re-lock the bootloader"
   advice found elsewhere.
+
+## 2026-09-30
+
+- About a week after installation the Play Store started blocking every install with a
+  full-screen "This device isn't Play Protect certified" page (only a *Close* button).
+  Fixed by registering the GSF Android ID at google.com/android/uncertified, then clearing
+  the data of **both** Play Store and Play Services and rebooting. Registration alone,
+  cache-only clearing, or clearing Play Store data alone were each tested and were not
+  enough. Documented as a required post-install step.
